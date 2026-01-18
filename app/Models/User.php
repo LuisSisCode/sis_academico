@@ -2,47 +2,84 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    protected $table = 'users';
+    protected $primaryKey = 'ID_users';
+
     protected $fillable = [
-        'name',
+        'ID_carrera',
+        'nombre',
         'email',
         'password',
+        'tipo_usuario',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    // Relaciones
+    public function carrera(): BelongsTo
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsTo(Carrera::class, 'ID_carrera', 'ID_carrera');
+    }
+
+    public function auxiliar(): HasOne
+    {
+        return $this->hasOne(Auxiliar::class, 'ID_users', 'ID_users');
+    }
+
+    // Métodos de rol
+    public function isSuperUsuario(): bool
+    {
+        return $this->tipo_usuario === 'Super usuario';
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->tipo_usuario === 'Admin';
+    }
+
+    public function isAuxiliar(): bool
+    {
+        return $this->tipo_usuario === 'Auxiliar';
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return in_array($this->tipo_usuario, ['Super usuario', 'Admin']);
+    }
+
+    // Scopes
+    public function scopeSuperUsuarios($query)
+    {
+        return $query->where('tipo_usuario', 'Super usuario');
+    }
+
+    public function scopeAdmins($query)
+    {
+        return $query->where('tipo_usuario', 'Admin');
+    }
+
+    public function scopeAuxiliares($query)
+    {
+        return $query->where('tipo_usuario', 'Auxiliar');
     }
 }
